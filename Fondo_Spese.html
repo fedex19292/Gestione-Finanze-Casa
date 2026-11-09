@@ -1,0 +1,137 @@
+<!doctype html>
+<html lang="it"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Fondo spese · Preventivo e consuntivo</title>
+<style>
+:root{--bg:#f6f5f1;--card:#fff;--tx:#1d2320;--mu:#6b7570;--ln:#e4e2db;--ac:#1f6f5c;--ac2:#e3f0eb;--neg:#b3392f;--pos:#1f7a4d;--bar:#2a8a72;--am:#d98e2b;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){color-scheme:dark;--bg:#14181a;--card:#1d2326;--tx:#e8ece9;--mu:#98a39e;--ln:#2d3639;--ac:#5fc1a6;--ac2:#1f3a33;--neg:#ee8a80;--pos:#6fd09a;--bar:#4aae94}}
+:root[data-theme="dark"]{color-scheme:dark;--bg:#14181a;--card:#1d2326;--tx:#e8ece9;--mu:#98a39e;--ln:#2d3639;--ac:#5fc1a6;--ac2:#1f3a33;--neg:#ee8a80;--pos:#6fd09a;--bar:#4aae94}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--tx);font:15px/1.45 system-ui,-apple-system,"Segoe UI",sans-serif}
+.w{max-width:1100px;margin:0 auto;padding:16px}
+h1{font:600 26px/1.2 ui-serif,Georgia,serif;margin:0}h2{font:600 17px ui-serif,Georgia,serif;margin:0 0 10px}
+.top{display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between;margin-bottom:12px}
+.card{background:var(--card);border:1px solid var(--ln);border-radius:12px;padding:16px;margin-bottom:14px}
+button,select,input{font:inherit;color:var(--tx);background:var(--card);border:1px solid var(--ln);border-radius:8px;padding:6px 10px}
+button{cursor:pointer}button.p{background:var(--ac);border-color:var(--ac);color:#fff}button.x{color:var(--neg);padding:2px 8px}
+.tabs,.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}.tabs{margin-bottom:14px}.row{margin:8px 0}
+.tab.on{background:var(--ac);color:#fff;border-color:var(--ac)}
+.k{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px;margin-bottom:14px}
+.k div{background:var(--card);border:1px solid var(--ln);border-radius:12px;padding:12px}.k b{display:block;font-size:21px}
+.mu,.k span{color:var(--mu);font-size:13px}.neg{color:var(--neg)}.pos{color:var(--pos)}.r{text-align:right;white-space:nowrap}
+.tw{overflow-x:auto}table{width:100%;border-collapse:collapse}td,th{padding:6px 6px;border-bottom:1px solid var(--ln);text-align:left;vertical-align:middle}th{font-size:12px;color:var(--mu)}
+.mx input{width:72px;text-align:right;padding:4px 6px}.ov{border-color:var(--ac)!important}.pend{border-color:var(--am)!important;background:rgba(217,142,43,.13)}
+tr.t td{font-weight:600;background:var(--ac2)}.ch{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:14px;margin-bottom:14px}.ch .card{margin:0}
+.pr{display:none}
+@media print{:root:root:root{color-scheme:light;--bg:#fff;--card:#fff;--tx:#1d2320;--mu:#6b7570;--ln:#e4e2db;--ac:#1f6f5c;--ac2:#e3f0eb;--neg:#b3392f;--pos:#1f7a4d;--bar:#2a8a72}*{-webkit-print-color-adjust:exact;print-color-adjust:exact}.noprint{display:none!important}.pr{display:block}body{background:#fff}.w{padding:0}.card,.k div{break-inside:avoid}}
+.sitenav{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 14px}.sitenav a{padding:7px 14px;border:1px solid var(--ln,var(--bd));border-radius:999px;background:var(--card);color:var(--tx);text-decoration:none;font-size:14px;font-weight:600}.sitenav a:hover{border-color:var(--ac)}.sitenav a.on{background:var(--ac);border-color:var(--ac);color:#fff;pointer-events:none}@media print{.sitenav{display:none!important}}
+.mm{font-size:13px}.mm td,.mm th{padding:5px 6px;white-space:nowrap}.mm td.cn{font-weight:600;border-right:1px solid var(--ln)}.mm tr.cs>td{border-top:2px solid var(--ln)}
+</style></head><body><div class="w">
+<nav class="sitenav noprint"><a href="Fondo_Spese.html" class="on">🏦 Fondo spese</a><a href="Report_Finanze_Famiglia.html">💶 Finanze di casa</a><a href="Simulatore_Bollette.html">💡 Bollette</a></nav>
+
+<div class="top"><h1>🏦 Fondo spese · Preventivo e consuntivo</h1></div>
+<div class="tabs noprint"><button class="tab" data-t="plan">Piano mensile</button><button class="tab" data-t="sum">Consuntivo</button><button class="tab" data-t="set">Impostazioni</button></div>
+<div id="app"></div></div>
+<script>
+const MS=['Gen','Feb','Mar','Apr','Mag','Giu','Lug','Ago','Set','Ott','Nov','Dic'];
+const $=s=>document.querySelector(s);
+const eur=x=>new Intl.NumberFormat('it-IT',{style:'currency',currency:'EUR'}).format(x);
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const pad=n=>String(n).padStart(2,'0');
+const now=new Date(),CUR=now.getFullYear()+'-'+pad(now.getMonth()+1);
+const DEF=()=>({cats:['Mutuo','Acqua','Luce','Gas','TARI','Condominio','Assicurazione'].map(n=>({n,def:0,open:0})),pre:{},act:{},start:now.getFullYear()+'-01'});
+let S=(()=>{try{const j=JSON.parse(localStorage.getItem('fondospese'));if(j&&j.cats)return j}catch(e){}return DEF()})();
+const save=()=>{try{localStorage.setItem('fondospese',JSON.stringify(S))}catch(e){}};
+let tab='plan',yr=now.getFullYear(),m1=1,m2=now.getMonth()+1;
+const mths=y=>Array.from({length:12},(_,i)=>y+'-'+pad(i+1));
+const range=(a,b)=>{const o=[];let[y,m]=a.split('-').map(Number);while(y+'-'+pad(m)<=b){o.push(y+'-'+pad(m));if(++m>12){m=1;y++}}return o};
+const cat=n=>S.cats.find(c=>c.n==n);
+const preV=(c,m)=>{const v=S.pre[c.n+'|'+m];return v!==undefined?v:(m>=S.start?c.def:0)};
+const pn=s=>{s=(s||'').replace(/[€\s]/g,'').replace(/,/g,'.');if(!s)return null;let t=0;for(const p of s.split('+')){const v=parseFloat(p);if(isNaN(v))return null;t+=v}return Math.round(t*100)/100};
+const fi=(v,f)=>f||v?String(v).replace('.',','):'';
+const rd=x=>Math.round(x*100)/100;
+function stat(c,a,b){const r={pre:0,act:0,preC:0,pend:0,nP:0,n:0};
+ for(const m of range(a,b)){const p=preV(c,m),x=S.act[c.n+'|'+m];r.pre+=p;
+  if(x!==undefined){r.act+=x;r.preC+=p;r.n++}else if(p>0){r.pend+=p;r.nP++}}
+ r.diff=rd(r.preC-r.act);return r}
+function fondo(c,end){let t=c.open||0;const ks=Object.keys(S.pre).concat(Object.keys(S.act)).map(k=>k.split('|')[1]).concat(S.start).sort();
+ for(const m of range(ks[0],end)){t+=preV(c,m)-(S.act[c.n+'|'+m]||0)}return rd(t)}
+function render(){document.querySelectorAll('.tab').forEach(b=>b.classList.toggle('on',b.dataset.t==tab));({plan:rPlan,sum:rSum,set:rSet})[tab]()}
+const yrOpts=()=>{const y0=Math.min(+S.start.slice(0,4),yr),y1=Math.max(now.getFullYear()+1,yr);let o='';for(let y=y0;y<=y1;y++)o+='<option'+(y==yr?' selected':'')+'>'+y+'</option>';return o};
+function rPlan(){
+ const ms=mths(yr);
+ let h='<div class="card"><div class="row noprint">Anno <select id="yr">'+yrOpts()+'</select></div><p class="mu">Riga <b>Accantonato</b>: quanto metti via ogni mese (parte dall’importo predefinito; se lo cambi in un mese diventa un valore personalizzato, bordo verde). Riga <b>Speso</b>: la spesa effettiva del mese di competenza, che inserisci quando la conosci. Puoi scrivere anche somme, es. <i>85,20+40</i>. Celle arancioni = mese passato ancora da consuntivare.</p><div class="tw"><table class="mx"><tr><th>Categoria</th><th></th>'+ms.map(m=>'<th class="r">'+MS[+m.slice(5)-1]+'</th>').join('')+'<th class="r">Totale</th></tr>';
+ for(const c of S.cats){
+  h+='<tr><td rowspan="2"><b>'+esc(c.n)+'</b></td><td class="mu">Accantonato</td>'+ms.map(m=>{const k=c.n+'|'+m,ov=S.pre[k]!==undefined;return '<td><input data-t="pre" data-k="'+esc(k)+'" class="'+(ov?'ov':'')+'" inputmode="decimal" value="'+fi(preV(c,m),ov)+'"></td>'}).join('')+'<td class="r" data-tot="pre|'+esc(c.n)+'"></td></tr>';
+  h+='<tr><td class="mu">Speso</td>'+ms.map(m=>{const k=c.n+'|'+m,a=S.act[k],pe=a===undefined&&preV(c,m)>0&&m<=CUR;return '<td><input data-t="act" data-k="'+esc(k)+'" class="'+(pe?'pend':'')+'" inputmode="decimal" value="'+(a===undefined?'':fi(a,true))+'" placeholder="'+(pe?'da inserire':'')+'"></td>'}).join('')+'<td class="r" data-tot="act|'+esc(c.n)+'"></td></tr>'}
+ h+='<tr class="t"><td colspan="2">Totale accantonato</td>'+ms.map(m=>'<td class="r" data-ft="pre|'+m+'"></td>').join('')+'<td class="r" data-ft="pre|all"></td></tr><tr class="t"><td colspan="2">Totale speso</td>'+ms.map(m=>'<td class="r" data-ft="act|'+m+'"></td>').join('')+'<td class="r" data-ft="act|all"></td></tr></table></div></div>';
+ $('#app').innerHTML=h;updTot()}
+function updTot(){const ms=mths(yr),T={};
+ document.querySelectorAll('[data-tot]').forEach(e=>{const[t,n]=e.dataset.tot.split('|'),c=cat(n);let s=0;for(const m of ms)s+=t=='pre'?preV(c,m):(S.act[n+'|'+m]||0);e.textContent=eur(rd(s))});
+ for(const m of ms){let p=0,a=0;for(const c of S.cats){p+=preV(c,m);a+=S.act[c.n+'|'+m]||0}T['pre|'+m]=p;T['act|'+m]=a}
+ document.querySelectorAll('[data-ft]').forEach(e=>{const[t,m]=e.dataset.ft.split('|');e.textContent=eur(rd(m=='all'?ms.reduce((s,x)=>s+T[t+'|'+x],0):T[t+'|'+m]))})}
+function charts(rows,a,b){
+ const n=rows.length,mx=Math.max(1,...rows.flatMap(r=>[r.s.pre,r.s.act])),gw=560/Math.max(1,n);
+ const bars=rows.map((r,i)=>{const x=20+i*gw,h1=r.s.pre/mx*130,h2=r.s.act/mx*130,w=Math.min(26,gw/2-4);
+  return '<rect x="'+(x+gw/2-w-1)+'" y="'+(150-h1)+'" width="'+w+'" height="'+h1+'" rx="2" style="fill:var(--bar)"/><rect x="'+(x+gw/2+1)+'" y="'+(150-h2)+'" width="'+w+'" height="'+h2+'" rx="2" style="fill:var(--am)"/><text x="'+(x+gw/2)+'" y="166" text-anchor="middle" font-size="10" style="fill:var(--mu)">'+esc(r.c.n.slice(0,11))+'</text>'}).join('');
+ const L=range(a,b),v=L.map(m=>S.cats.reduce((s,c)=>s+fondo(c,m),0)),lo=Math.min(0,...v),hi=Math.max(1,...v),
+ X=i=>30+i*(540/Math.max(1,L.length-1)),Y=x=>130-(x-lo)/(hi-lo)*110;
+ const pl=v.map((x,i)=>X(i)+','+Y(x)).join(' '),lb=L.map((m,i)=>'<text x="'+X(i)+'" y="148" text-anchor="middle" font-size="10" style="fill:var(--mu)">'+MS[+m.slice(5)-1]+'</text>').join('');
+ return '<div class="ch"><div class="card"><h2>Accantonato e speso per categoria</h2><svg viewBox="0 0 600 175" width="100%">'+bars+'</svg><div class="mu"><span style="color:var(--bar)">■</span> accantonato &nbsp;<span style="color:var(--am)">■</span> speso</div></div><div class="card"><h2>Fondo accumulato (totale)</h2><svg viewBox="0 0 600 155" width="100%"><line x1="30" x2="570" y1="'+Y(0)+'" y2="'+Y(0)+'" style="stroke:var(--ln)"/><polyline points="'+pl+'" fill="none" stroke-width="3" style="stroke:var(--ac)"/>'+v.map((x,i)=>'<circle cx="'+X(i)+'" cy="'+Y(x)+'" r="3.5" style="fill:var(--ac)"/>').join('')+lb+'</svg><div class="mu">Saldo a fine periodo: '+eur(rd(v[v.length-1]||0))+'</div></div></div>'}
+function rMonthly(a,b){
+ const L=range(a,b),sg=d=>(d>=0?'+':'')+eur(d),cl=d=>d>=0?'pos':'neg';
+ let h='<div class="card"><h2>Andamento mese per mese</h2><div class="tw"><table class="mm"><tr><th>Categoria</th><th></th>'+L.map(m=>'<th class="r">'+MS[+m.slice(5)-1]+'</th>').join('')+'<th class="r">Periodo</th></tr>';
+ const TP=L.map(()=>0),TA=L.map(()=>0),TE=L.map(()=>0),TF=L.map(()=>0);
+ for(const c of S.cats){
+  const D=L.map(m=>{const p=preV(c,m),x=S.act[c.n+'|'+m];return{m,p,x,d:x===undefined?null:rd(p-x),f:fondo(c,m)}});
+  D.forEach((o,i)=>{TP[i]+=o.p;TA[i]+=o.x||0;TE[i]+=o.d||0;TF[i]+=o.f});
+  const sp=D.reduce((t,o)=>t+o.p,0),sa=D.reduce((t,o)=>t+(o.x||0),0),se=D.reduce((t,o)=>t+(o.d||0),0),any=D.some(o=>o.d!==null);
+  h+='<tr class="cs"><td class="cn" rowspan="4">'+esc(c.n)+'</td><td class="mu">Accantonato</td>'+D.map(o=>'<td class="r">'+eur(o.p)+'</td>').join('')+'<td class="r">'+eur(rd(sp))+'</td></tr>';
+  h+='<tr><td class="mu">Speso</td>'+D.map(o=>o.x!==undefined?'<td class="r">'+eur(o.x)+'</td>':(o.p>0&&o.m<=CUR?'<td class="r pend">da inserire</td>':'<td class="r mu">–</td>')).join('')+'<td class="r">'+eur(rd(sa))+'</td></tr>';
+  h+='<tr><td class="mu">Esito</td>'+D.map(o=>o.d===null?'<td class="r mu">–</td>':'<td class="r '+cl(o.d)+'">'+sg(o.d)+'</td>').join('')+'<td class="r '+(any?cl(se):'mu')+'">'+(any?sg(rd(se)):'–')+'</td></tr>';
+  h+='<tr><td class="mu">Fondo</td>'+D.map(o=>'<td class="r">'+eur(o.f)+'</td>').join('')+'<td class="r">'+eur(D.length?D[D.length-1].f:0)+'</td></tr>';
+ }
+ let cum=0;const CE=TE.map(x=>cum=rd(cum+x));
+ h+='<tr class="t cs"><td colspan="2">Totale accantonato</td>'+TP.map(x=>'<td class="r">'+eur(rd(x))+'</td>').join('')+'<td class="r">'+eur(rd(TP.reduce((t,x)=>t+x,0)))+'</td></tr>';
+ h+='<tr class="t"><td colspan="2">Totale speso</td>'+TA.map(x=>'<td class="r">'+eur(rd(x))+'</td>').join('')+'<td class="r">'+eur(rd(TA.reduce((t,x)=>t+x,0)))+'</td></tr>';
+ h+='<tr class="t"><td colspan="2">Esito del mese</td>'+TE.map(x=>'<td class="r '+cl(x)+'">'+sg(rd(x))+'</td>').join('')+'<td class="r '+cl(cum)+'">'+sg(cum)+'</td></tr>';
+ h+='<tr class="t"><td colspan="2">Esito cumulato</td>'+CE.map(x=>'<td class="r '+cl(x)+'">'+sg(x)+'</td>').join('')+'<td class="r '+cl(cum)+'">'+sg(cum)+'</td></tr>';
+ h+='<tr class="t"><td colspan="2">Fondo totale</td>'+TF.map(x=>'<td class="r">'+eur(rd(x))+'</td>').join('')+'<td class="r">'+eur(rd(TF.length?TF[TF.length-1]:0))+'</td></tr>';
+ return h+'</table></div><p class="mu">Esito = accantonato − speso, solo per le categorie con la spesa del mese già inserita (verde = avanzo, rosso = sforato). «Fondo» è il saldo accumulato a fine mese, saldo iniziale incluso. Celle arancioni = spesa ancora da inserire.</p></div>'}
+function rSum(){
+ if(m1>m2)[m1,m2]=[m2,m1];const a=yr+'-'+pad(m1),b=yr+'-'+pad(m2);
+ const rows=S.cats.map(c=>({c,s:stat(c,a,b),f:fondo(c,b)})),T=rows.reduce((t,r)=>{t.pre+=r.s.pre;t.act+=r.s.act;t.preC+=r.s.preC;t.pend+=r.s.pend;t.f+=r.f;return t},{pre:0,act:0,preC:0,pend:0,f:0}),df=rd(T.preC-T.act);
+ const mo=Array.from({length:12},(_,i)=>'<option value="'+(i+1)+'"%S>'+MS[i]+'</option>');
+ const sel=v=>mo.map((o,i)=>o.replace('%S',i+1==v?' selected':'')).join('');
+ let h='<div class="row noprint">Periodo: <select id="yr">'+yrOpts()+'</select> dal <select id="m1">'+sel(m1)+'</select> al <select id="m2">'+sel(m2)+'</select><button class="p" id="prt">Stampa / PDF</button></div><div class="pr"><h1>Consuntivo fondo spese – '+MS[m1-1]+' '+yr+' / '+MS[m2-1]+' '+yr+'</h1></div>';
+ h+='<div class="k"><div><span>Accantonato nel periodo</span><b>'+eur(rd(T.pre))+'</b></div><div><span>Speso (mesi consuntivati)</span><b>'+eur(rd(T.act))+'</b></div><div><span>Esito consuntivo</span><b class="'+(df>=0?'pos':'neg')+'">'+(df>=0?'+':'')+eur(df)+'</b><span>'+(df>=0?'avanzo: hai speso meno del preventivato':'sforato: hai speso più del preventivato')+'</span></div><div><span>In attesa di consuntivo</span><b>'+eur(rd(T.pend))+'</b><span>accantonato dei mesi senza spesa</span></div><div><span>Fondo accumulato</span><b>'+eur(rd(T.f))+'</b><span>a fine periodo, incl. saldo iniziale</span></div></div>';
+ h+=charts(rows,a,b);h+=rMonthly(a,b);
+ h+='<div class="card"><h2>Dettaglio per categoria</h2><div class="tw"><table><tr><th>Categoria</th><th class="r">Accantonato</th><th class="r">Speso</th><th class="r">Preventivo mesi consuntivati</th><th class="r">Differenza</th><th class="r">Mesi in attesa</th><th class="r">Fondo a fine periodo</th><th>Stato</th></tr>'+rows.map(r=>{const s=r.s,st=s.n?(s.diff>=0?'<span class="pos">Avanzo</span>':'<span class="neg">Sforato</span>'):'<span class="mu">In attesa</span>';
+  return '<tr><td>'+esc(r.c.n)+'</td><td class="r">'+eur(rd(s.pre))+'</td><td class="r">'+eur(rd(s.act))+'</td><td class="r">'+eur(rd(s.preC))+'</td><td class="r '+(s.diff>=0?'pos':'neg')+'">'+(s.n?(s.diff>=0?'+':'')+eur(s.diff):'–')+'</td><td class="r">'+s.nP+(s.nP?' ('+eur(rd(s.pend))+')':'')+'</td><td class="r">'+eur(r.f)+'</td><td>'+st+'</td></tr>'}).join('')+'<tr class="t"><td>Totale</td><td class="r">'+eur(rd(T.pre))+'</td><td class="r">'+eur(rd(T.act))+'</td><td class="r">'+eur(rd(T.preC))+'</td><td class="r">'+(df>=0?'+':'')+eur(df)+'</td><td></td><td class="r">'+eur(rd(T.f))+'</td><td></td></tr></table></div><p class="mu">La differenza confronta solo i mesi per cui hai inserito la spesa effettiva: i mesi senza bolletta sono «in attesa» e non contano come risparmio.</p></div>';
+ $('#app').innerHTML=h}
+function rSet(){
+ $('#app').innerHTML='<div class="card"><h2>Categorie e importi</h2><div class="tw"><table><tr><th>Categoria</th><th class="r">Accantonamento mensile</th><th class="r">Saldo iniziale fondo</th><th></th></tr>'+S.cats.map((c,i)=>'<tr><td>'+esc(c.n)+'</td><td class="r"><input type="number" step="0.01" style="width:110px" data-s="def" data-i="'+i+'" value="'+(c.def||'')+'"> €</td><td class="r"><input type="number" step="0.01" style="width:110px" data-s="open" data-i="'+i+'" value="'+(c.open||'')+'"> €</td><td><button class="x" data-a="del" data-i="'+i+'">×</button></td></tr>').join('')+'</table></div><div class="row"><input id="nn" placeholder="Nuova categoria"><input id="nd" type="number" step="0.01" placeholder="€/mese" style="width:100px"><button class="p" data-a="add">Aggiungi</button></div><p class="mu">L’importo mensile si applica a tutti i mesi dal mese di partenza; nel «Piano mensile» puoi cambiarlo mese per mese. Il saldo iniziale è quanto avevi già messo da parte per quella voce prima del mese di partenza.</p><div class="row">Mese di partenza: <select id="sy">'+yrOpts()+'</select><select id="sm">'+MS.map((m,i)=>'<option value="'+(i+1)+'"'+(i+1==+S.start.slice(5)?' selected':'')+'>'+m+'</option>').join('')+'</select></div></div><div class="card"><h2>Backup</h2><p class="mu">I dati restano solo in questo browser: esporta un backup ogni tanto.</p><div class="row"><button class="p" data-a="exp">Esporta (JSON)</button><button data-a="imp">Importa</button><input type="file" id="ij" accept=".json" hidden><button class="x" data-a="reset">Cancella tutto</button></div></div>'}
+document.addEventListener('click',e=>{
+ const t=e.target.closest('.tab');if(t){tab=t.dataset.t;render();return}
+ if(e.target.id=='prt'){window.print();return}
+ const b=e.target.closest('[data-a]');if(!b)return;const a=b.dataset.a;
+ if(a=='del'){if(confirm('Eliminare la categoria e i suoi dati?')){const n=S.cats[+b.dataset.i].n;S.cats.splice(+b.dataset.i,1);for(const o of [S.pre,S.act])for(const k in o)if(k.startsWith(n+'|'))delete o[k];save();render()}}
+ else if(a=='add'){const n=$('#nn').value.trim().replace(/\|/g,'');if(n&&!cat(n)){S.cats.push({n,def:parseFloat($('#nd').value)||0,open:0});save();render()}}
+ else if(a=='exp'){const u=URL.createObjectURL(new Blob([JSON.stringify(S)],{type:'application/json'})),l=document.createElement('a');l.href=u;l.download='fondo-spese-backup.json';l.click()}
+ else if(a=='imp')$('#ij').click();
+ else if(a=='reset'){if(confirm('Cancellare tutti i dati?')){S=DEF();save();render()}}});
+document.addEventListener('change',e=>{const s=e.target,d=s.dataset;
+ if(d.k){const v=pn(s.value);
+  if(d.t=='act'){if(v===null)delete S.act[d.k];else S.act[d.k]=v}
+  else{if(v===null)delete S.pre[d.k];else S.pre[d.k]=v}
+  save();const c=cat(d.k.split('|')[0]),m=d.k.split('|')[1];
+  if(d.t=='act')s.value=v===null?'':fi(v,true);else{s.value=fi(preV(c,m),S.pre[d.k]!==undefined);s.classList.toggle('ov',S.pre[d.k]!==undefined)}
+  s.classList.remove('pend');updTot()}
+ else if(d.s){const c=S.cats[+d.i];c[d.s]=parseFloat(s.value)||0;save()}
+ else if(s.id=='yr'){yr=+s.value;render()}
+ else if(s.id=='m1'){m1=+s.value;render()}
+ else if(s.id=='m2'){m2=+s.value;render()}
+ else if(s.id=='sy'||s.id=='sm'){S.start=$('#sy').value+'-'+pad($('#sm').value);save()}
+ else if(s.id=='ij'){const f=s.files[0];if(f)f.text().then(x=>{try{const j=JSON.parse(x);if(!j.cats)throw 0;S=j;save();render()}catch(_){alert('Backup non valido')}})}});
+render();
+</script></body></html>

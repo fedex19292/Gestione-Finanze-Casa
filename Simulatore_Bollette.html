@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="it"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Simulatore bollette</title>
+<style>
+:root{--bg:#f4f6f8;--card:#fff;--tx:#1b1f24;--mu:#5d6773;--bd:#dde1e6;--ac:#0b6bcb;--el:#c27800;--ga:#c0392b;--wa:#0a7fa3;color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#14171b;--card:#1d2127;--tx:#e8eaed;--mu:#9aa3ad;--bd:#2f353d;--ac:#5aa9ff;--el:#f0b44a;--ga:#ff7b6b;--wa:#4cc6e8;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#14171b;--card:#1d2127;--tx:#e8eaed;--mu:#9aa3ad;--bd:#2f353d;--ac:#5aa9ff;--el:#f0b44a;--ga:#ff7b6b;--wa:#4cc6e8;color-scheme:dark}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--tx);font:15px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+main{max-width:1100px;margin:0 auto;padding:16px}
+h1{font-size:22px;margin:0 0 4px}h2{font-size:17px;margin:0 0 10px}
+.sub{color:var(--mu);margin:0 0 14px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(310px,1fr));gap:14px}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:12px;padding:14px;margin-bottom:14px}
+.grid .card{margin:0}
+.el{border-top:4px solid var(--el)}.ga{border-top:4px solid var(--ga)}.wa{border-top:4px solid var(--wa)}
+.f{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px}
+label{display:flex;flex-direction:column;font-size:12px;color:var(--mu);gap:3px}
+label.ck{flex-direction:row;align-items:center;gap:6px;font-size:13px;color:var(--tx);grid-column:1/-1}
+input,textarea,button{font:inherit}
+input[type=number],input[type=date],textarea{background:var(--bg);color:var(--tx);border:1px solid var(--bd);border-radius:7px;padding:7px;width:100%}
+table{width:100%;border-collapse:collapse;font-size:13px}
+td,th{padding:4px 6px;border-bottom:1px solid var(--bd);text-align:right}
+td:first-child,th:first-child{text-align:left}
+tr.t td{font-weight:700;border-bottom:0}
+.big{font-size:26px;font-weight:700}
+.hint{color:var(--mu);font-size:12px;margin:6px 0}
+button{background:var(--ac);color:#fff;border:0;border-radius:8px;padding:8px 12px;cursor:pointer;margin:3px 3px 3px 0}
+button.s{background:transparent;color:var(--ac);border:1px solid var(--ac)}
+.wrap{overflow-x:auto}
+details summary{cursor:pointer;font-weight:600;margin-bottom:8px}
+.pg{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:8px;margin-bottom:12px}
+.pg h4{grid-column:1/-1;margin:8px 0 0;font-size:13px}
+textarea{min-height:120px;font-family:ui-monospace,monospace;font-size:12px}
+@media print{button,details,.noprint{display:none!important}body{background:#fff;color:#000}}
+.sitenav{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 14px}.sitenav a{padding:7px 14px;border:1px solid var(--ln,var(--bd));border-radius:999px;background:var(--card);color:var(--tx);text-decoration:none;font-size:14px;font-weight:600}.sitenav a:hover{border-color:var(--ac)}.sitenav a.on{background:var(--ac);border-color:var(--ac);color:#fff;pointer-events:none}@media print{.sitenav{display:none!important}}
+</style></head>
+<body><main>
+<nav class="sitenav noprint"><a href="Fondo_Spese.html">🏦 Fondo spese</a><a href="Report_Finanze_Famiglia.html">💶 Finanze di casa</a><a href="Simulatore_Bollette.html" class="on">💡 Bollette</a></nav>
+
+<h1>Simulatore bollette</h1>
+<p class="sub">Luce (Edison Web Luce), gas (Enel Move Gas) e acqua (Publiacqua) per Via Vignaccia 3. Inserisci periodo e letture: il calcolo usa le tariffe delle tue bollette.</p>
+<p class="sub">📥 Scarica i consumi dal <a href="https://consumienergia.it/portaleConsumi/" target="_blank" rel="noopener noreferrer" style="color:var(--ac);font-weight:600">Portale Consumi (consumienergia.it/portaleConsumi)</a> e riporta qui le letture.</p>
+
+<div class="card"><div class="hint" style="margin:0">Totale simulato (le tre utenze)</div><div class="big" id="grand">–</div><div class="hint" id="grandsub"></div></div>
+
+<div class="grid" id="cards"></div>
+
+<div class="card" style="margin-top:14px">
+<details><summary>Tariffe e parametri (modificabili)</summary>
+<div class="hint">Valori letti dalle bollette/contratti. Le fasce accise gas oltre 120 Smc/anno e l’addizionale sono valori standard da verificare in bolletta.</div>
+<div id="params"></div></details></div>
+
+<div class="card">
+<h2>Report</h2>
+<div id="report"></div>
+<div class="noprint"><button id="bRep">Aggiorna report</button><button class="s" id="bCopyRep">Copia report come testo</button><button class="s" id="bPrint">Stampa / PDF</button></div>
+</div>
+
+<div class="card noprint">
+<h2>Backup JSON</h2>
+<div class="hint">Il backup contiene tariffe, ultimi dati inseriti e storico. Copia il testo e salvalo in un file .json; per ripristinare incolla il testo o carica il file.</div>
+<textarea id="json" spellcheck="false"></textarea>
+<div><button id="bExp">Genera JSON</button><button class="s" id="bCopy">Copia</button><button class="s" id="bImp">Importa dal testo</button>
+<label style="display:inline-block;margin-left:6px">Carica file .json<input type="file" id="file" accept=".json,application/json"></label>
+<button class="s" id="bReset">Ripristina valori iniziali</button></div>
+<div class="hint" id="msg"></div>
+</div>
+<p class="hint">Stima indicativa: esclude importi una tantum (voltura, deposito cauzionale) e può differire dalle bollette reali per arrotondamenti, conguagli e variazioni ARERA.</p>
+</main>
+<script>
+const DP={eAnnuo:90,ePrezzo:0.122001,eDisp:0.018468,eQF:1.92,eQP:1.976567,kw:4.5,eQE:0.01473,asos:0.031515,arim:0.001638,eAcc:0.0227,tv:9,
+gPrezzo:0.79,pcs:0.039273,pcsStd:0.03852,gQFv:13,gQFr:6.1325,gQCr:0.11347424,gQFo:-1.8025,gQCo:0.036709,gAddiz:0.022,gC:0.983527,gA1:0.044,gA2:0.175,gA3:0.17,gA4:0.186,
+wT1:0.706142,wT2:1.412283,wT3:4.236851,wS1:37,wS2:103,wFo:0.718606,wDe:0.575974,wQa:33.086875,wQf:12.683301,wQd:9.374612,wPer:0.0987,wAss:3,wGes:1};
+const DI={elec:{from:"2026-08-31",to:"2026-09-30",p1:1749,p2:1935,p3:1938,c1:"",c2:"",c3:"",tv:true},
+gas:{from:"2026-09-30",to:"2026-10-31",prev:15806,cur:"",cum:32},
+water:{from:"2026-10-14",to:"2026-11-14",prev:515,cur:"",ass:true}};
+const PL={eAnnuo:["Luce: corrispettivo annuo €/anno",1],ePrezzo:["Luce: energia €/kWh",1],eDisp:["Luce: dispacciamento €/kWh",1],eQF:["Rete: quota fissa €/mese",1],eQP:["Rete: quota potenza €/kW/mese",1],kw:["Potenza impegnata kW",1],eQE:["Rete: quota energia €/kWh",1],asos:["Oneri ASOS €/kWh",1],arim:["Oneri ARIM €/kWh",1],eAcc:["Accisa luce €/kWh",1],tv:["Canone TV €",1],
+gPrezzo:["Gas: prezzo materia €/Smc",1],pcs:["PCS località",1],pcsStd:["PCS standard",1],gQFv:["Gas: quota fissa vendita €/mese",1],gQFr:["Rete: quota fissa €/mese",1],gQCr:["Rete: quota consumi €/Smc",1],gQFo:["Oneri: quota fissa €/mese",1],gQCo:["Oneri: quota consumi €/Smc",1],gAddiz:["Addizionale enti locali €/Smc",1],gC:["Coefficiente C (mc→Smc)",1],gA1:["Accisa gas 0–120 Smc/anno €/Smc",1],gA2:["Accisa gas 120–480 €/Smc",1],gA3:["Accisa gas 480–1560 €/Smc",1],gA4:["Accisa gas oltre 1560 €/Smc",1],
+wT1:["Acquedotto scaglione 1 €/mc",1],wT2:["Acquedotto scaglione 2 €/mc",1],wT3:["Acquedotto scaglione 3 €/mc",1],wS1:["Limite scaglione 1 mc/anno",1],wS2:["Limite scaglione 2 mc/anno",1],wFo:["Fognatura €/mc",1],wDe:["Depurazione €/mc",1],wQa:["Quota fissa acquedotto €/anno",1],wQf:["Quota fissa fognatura €/anno",1],wQd:["Quota fissa depurazione €/anno",1],wPer:["Oneri perequazione totali €/mc",1],wAss:["Assicurazione perdite €/semestre",1],wGes:["Spese gestione assicurazione €/semestre",1]};
+const GR=[["Luce",["eAnnuo","ePrezzo","eDisp","eQF","eQP","kw","eQE","asos","arim","eAcc","tv"]],["Gas",["gPrezzo","pcs","pcsStd","gQFv","gQFr","gQCr","gQFo","gQCo","gAddiz","gC","gA1","gA2","gA3","gA4"]],["Acqua",["wT1","wT2","wT3","wS1","wS2","wFo","wDe","wQa","wQf","wQd","wPer","wAss","wGes"]]];
+const clone=o=>JSON.parse(JSON.stringify(o));
+let S={p:clone(DP),i:clone(DI),h:{}};
+const KEY="simBollette_v1";
+const n=v=>{const x=parseFloat(v);return isNaN(x)?0:x};
+const eur=v=>v.toLocaleString("it-IT",{minimumFractionDigits:2,maximumFractionDigits:2})+" €";
+const days=(a,b)=>Math.max(0,Math.round((new Date(b)-new Date(a))/864e5))||0;
+const MM=365/12;
+
+function fin(lines,extra,cons,unit,d,note){let imp=0,iva=0;lines.forEach(x=>{imp+=x.a;iva+=x.a*x.v/100});const tot=imp+iva+(extra||0);return{lines,imp,iva,extra:extra||0,tot,cons,unit,d,note}}
+function cElec(i,p){const d=days(i.from,i.to),f=d/MM,k=Math.max(0,n(i.c1)-n(i.p1))+Math.max(0,n(i.c2)-n(i.p2))+Math.max(0,n(i.c3)-n(i.p3));
+const L=[["Corrispettivo annuo (vendita)",p.eAnnuo/12*f],["Energia",k*p.ePrezzo],["Dispacciamento",k*p.eDisp],["Rete: quota fissa",p.eQF*f],["Rete: quota potenza",p.eQP*p.kw*f],["Rete: quota energia",k*p.eQE],["Oneri ASOS",k*p.asos],["Oneri ARIM",k*p.arim],["Accisa",k*p.eAcc]].map(x=>({l:x[0],a:x[1],v:10}));
+return fin(L,i.tv?p.tv:0,k,"kWh",d,k?"":"Inserisci le letture attuali F1, F2, F3.")}
+function cGas(i,p){const d=days(i.from,i.to),f=d/MM,mc=Math.max(0,n(i.cur)-n(i.prev)),s=mc*p.gC;
+let cum=n(i.cum),rem=s,acc=0;const lim=[120,480,1560,1e9],rt=[p.gA1,p.gA2,p.gA3,p.gA4];
+for(let k=0;k<4;k++){const u=Math.min(rem,Math.max(0,lim[k]-cum));acc+=u*rt[k];rem-=u;cum+=u}
+const L=[["Materia gas (consumi)",s*p.gPrezzo*p.pcs/p.pcsStd,10],["Quota fissa vendita",p.gQFv*f,22],["Rete: quota fissa",p.gQFr*f,22],["Rete: quota consumi",s*p.gQCr,10],["Oneri: quota fissa",p.gQFo*f,22],["Oneri: quota consumi",s*p.gQCo,10],["Accisa gas",acc,10],["Addizionale enti locali",s*p.gAddiz,10]].map(x=>({l:x[0],a:x[1],v:x[2]}));
+return fin(L,0,s,"Smc",d,mc?mc.toFixed(0)+" mc × C = "+s.toFixed(2)+" Smc":"Inserisci la lettura attuale del contatore.")}
+function cWat(i,p){const d=days(i.from,i.to),mc=Math.max(0,n(i.cur)-n(i.prev)),l1=p.wS1*d/365,l2=p.wS2*d/365;
+const a1=Math.min(mc,l1),a2=Math.max(0,Math.min(mc,l2)-l1),a3=Math.max(0,mc-l2);
+const L=[["Quota fissa (acq+fogn+depur)",(p.wQa+p.wQf+p.wQd)*d/365,10],["Acquedotto tariffa agevolata",a1*p.wT1,10],["Acquedotto tariffa base",a2*p.wT2,10],["Acquedotto tariffa eccedenza",a3*p.wT3,10],["Fognatura",mc*p.wFo,10],["Depurazione",mc*p.wDe,10],["Oneri perequazione",mc*p.wPer,10]].map(x=>({l:x[0],a:x[1],v:x[2]}));
+if(i.ass){L.push({l:"Assicurazione perdite occulte",a:p.wAss/182.5*d,v:0},{l:"Spese gestione assicurazione",a:p.wGes/182.5*d,v:22})}
+return fin(L,0,mc,"mc",d,mc?"":"Inserisci la lettura attuale (la bolletta reale può essere stimata).")}
+const CALC={elec:cElec,gas:cGas,water:cWat};
+const META={elec:["Luce","el","⚡"],gas:["Gas","ga","🔥"],water:["Acqua","wa","💧"]};
+let R={};
+
+const I=(path,lab,type)=>`<label>${lab}<input type="${type||"number"}" ${(type||"number")=="number"?'step="any" inputmode="decimal"':""} data-p="${path}"></label>`;
+const CK=(path,lab)=>`<label class="ck"><input type="checkbox" data-p="${path}"> ${lab}</label>`;
+const FORMS={
+elec:()=>I("i.elec.from","Dal","date")+I("i.elec.to","Al","date")+I("i.elec.p1","Lettura prec. F1")+I("i.elec.c1","Lettura attuale F1")+I("i.elec.p2","Lettura prec. F2")+I("i.elec.c2","Lettura attuale F2")+I("i.elec.p3","Lettura prec. F3")+I("i.elec.c3","Lettura attuale F3")+CK("i.elec.tv","Includi canone TV (addebitato gen–ott)"),
+gas:()=>I("i.gas.from","Dal","date")+I("i.gas.to","Al","date")+I("i.gas.prev","Lettura prec. (mc)")+I("i.gas.cur","Lettura attuale (mc)")+I("i.gas.cum","Smc già consumati nell’anno"),
+water:()=>I("i.water.from","Dal","date")+I("i.water.to","Al","date")+I("i.water.prev","Lettura prec. (mc)")+I("i.water.cur","Lettura attuale (mc)")+CK("i.water.ass","Includi assicurazione perdite occulte")};
+function build(){
+document.getElementById("cards").innerHTML=Object.keys(META).map(k=>`<div class="card ${META[k][1]}"><h2>${META[k][2]} ${META[k][0]}</h2><div class="f">${FORMS[k]()}</div><div id="r-${k}"></div><div class="noprint"><button class="s" data-save="${k}">Salva nello storico</button></div></div>`).join("");
+document.getElementById("params").innerHTML=GR.map(g=>`<div class="pg"><h4>${g[0]}</h4>${g[1].map(k=>I("p."+k,PL[k][0])).join("")}</div>`).join("")}
+function get(path){return path.split(".").reduce((o,k)=>o[k],S)}
+function set(path,v){const a=path.split(".");const l=a.pop();a.reduce((o,k)=>o[k],S)[l]=v}
+function sync(){document.querySelectorAll("[data-p]").forEach(e=>{const v=get(e.dataset.p);if(e.type=="checkbox")e.checked=!!v;else e.value=v})}
+function render(){let g=0;
+Object.keys(META).forEach(k=>{const r=R[k]=CALC[k](S.i[k],S.p);g+=r.tot;
+const rows=r.lines.map(x=>`<tr><td>${x.l}</td><td>${eur(x.a)}</td><td>${x.v}%</td></tr>`).join("")+(r.extra?`<tr><td>Canone TV (fuori campo IVA)</td><td>${eur(r.extra)}</td><td>–</td></tr>`:"");
+document.getElementById("r-"+k).innerHTML=`<div class="hint">${r.d} giorni · consumo ${r.cons.toLocaleString("it-IT",{maximumFractionDigits:2})} ${r.unit} ${r.note?"· "+r.note:""}</div><div class="wrap"><table><tr><th>Voce</th><th>Importo</th><th>IVA</th></tr>${rows}<tr><td>Imponibile</td><td>${eur(r.imp)}</td><td></td></tr><tr><td>IVA</td><td>${eur(r.iva)}</td><td></td></tr><tr class="t"><td>Totale</td><td>${eur(r.tot)}</td><td></td></tr></table></div>`});
+document.getElementById("grand").textContent=eur(g);
+document.getElementById("grandsub").textContent="Luce "+eur(R.elec.tot)+" · Gas "+eur(R.gas.tot)+" · Acqua "+eur(R.water.tot);
+try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}}
+
+function report(){const ms=Object.keys(S.h).sort();let cur="";
+const cell=(h,k)=>h&&h[k]?`${h[k].cons.toLocaleString("it-IT",{maximumFractionDigits:1})} ${h[k].unit} / ${eur(h[k].tot)}`:"–";
+let rows="",tot=0,txt="REPORT BOLLETTE\n\n";
+ms.forEach(m=>{const h=S.h[m];const t=["elec","gas","water"].reduce((a,k)=>a+(h[k]?h[k].tot:0),0);tot+=t;
+rows+=`<tr><td>${m}</td><td>${cell(h,"elec")}</td><td>${cell(h,"gas")}</td><td>${cell(h,"water")}</td><td>${eur(t)}</td></tr>`;
+txt+=`${m}: Luce ${cell(h,"elec")} | Gas ${cell(h,"gas")} | Acqua ${cell(h,"water")} | Totale ${eur(t)}\n`});
+let s=`<h4>Storico salvato</h4>`+(ms.length?`<div class="wrap"><table><tr><th>Mese</th><th>Luce</th><th>Gas</th><th>Acqua</th><th>Totale</th></tr>${rows}</table></div><p>Media mensile: <b>${eur(tot/ms.length)}</b> · proiezione annua: <b>${eur(tot/ms.length*12)}</b></p>`:`<p class="hint">Nessun mese salvato: usa “Salva nello storico” in ogni utenza.</p>`);
+if(ms.length)txt+=`\nMedia mensile: ${eur(tot/ms.length)}\nProiezione annua: ${eur(tot/ms.length*12)}\n`;
+s+=`<h4>Simulazione corrente</h4><div class="wrap"><table><tr><th>Utenza</th><th>Periodo</th><th>Consumo</th><th>Imponibile</th><th>IVA</th><th>Totale</th></tr>`;
+txt+="\nSIMULAZIONE CORRENTE\n";
+Object.keys(META).forEach(k=>{const r=R[k],i=S.i[k];s+=`<tr><td>${META[k][0]}</td><td>${i.from} → ${i.to}</td><td>${r.cons.toLocaleString("it-IT",{maximumFractionDigits:2})} ${r.unit}</td><td>${eur(r.imp)}</td><td>${eur(r.iva)}</td><td>${eur(r.tot)}</td></tr>`;
+txt+=`${META[k][0]} ${i.from}→${i.to}: ${r.cons.toFixed(2)} ${r.unit}, totale ${eur(r.tot)}\n`;
+r.lines.forEach(x=>txt+=`   - ${x.l}: ${eur(x.a)} (IVA ${x.v}%)\n`)});
+s+="</table></div>";document.getElementById("report").innerHTML=s;return txt}
+let lastTxt="";
+function msg(t){document.getElementById("msg").textContent=t}
+function copy(t,ta){try{navigator.clipboard.writeText(t).then(()=>msg("Copiato negli appunti."),()=>fb())}catch(e){fb()}
+function fb(){const el=ta||document.createElement("textarea");if(!ta){el.value=t;document.body.appendChild(el)}el.select();try{document.execCommand("copy");msg("Copiato negli appunti.")}catch(e){msg("Seleziona e copia manualmente.")}if(!ta)el.remove()}}
+function load(o){if(!o||!o.p||!o.i)throw new Error("formato");S={p:Object.assign(clone(DP),o.p),i:{elec:Object.assign({},DI.elec,o.i.elec),gas:Object.assign({},DI.gas,o.i.gas),water:Object.assign({},DI.water,o.i.water)},h:o.h||{}};sync();render();lastTxt=report()}
+
+build();
+try{const x=localStorage.getItem(KEY);if(x)S=Object.assign(S,JSON.parse(x))}catch(e){}
+sync();render();lastTxt=report();
+document.addEventListener("input",e=>{const p=e.target.dataset&&e.target.dataset.p;if(!p)return;const t=e.target.type;set(p,t=="checkbox"?e.target.checked:t=="number"?(e.target.value===""?"":parseFloat(e.target.value)):e.target.value);render()});
+document.addEventListener("click",e=>{const k=e.target.dataset&&e.target.dataset.save;if(!k)return;const r=R[k],m=S.i[k].to.slice(0,7);if(!m)return;S.h[m]=S.h[m]||{};S.h[m][k]={cons:r.cons,unit:r.unit,tot:r.tot,days:r.d};render();lastTxt=report();msg("Salvato "+META[k][0]+" per "+m+".")});
+const $=id=>document.getElementById(id);
+$("bRep").onclick=()=>{lastTxt=report()};
+$("bCopyRep").onclick=()=>{lastTxt=report();copy(lastTxt)};
+$("bPrint").onclick=()=>{lastTxt=report();try{window.print()}catch(e){msg("Stampa non disponibile qui.")}};
+$("bExp").onclick=()=>{$("json").value=JSON.stringify(Object.assign({versione:1,esportato:new Date().toISOString()},S),null,2);msg("JSON generato.")};
+$("bCopy").onclick=()=>{if(!$("json").value)$("bExp").click();copy($("json").value,$("json"))};
+$("bImp").onclick=()=>{try{load(JSON.parse($("json").value));msg("Backup importato.")}catch(e){msg("JSON non valido.")}};
+$("file").onchange=ev=>{const f=ev.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{try{$("json").value=r.result;load(JSON.parse(r.result));msg("Backup caricato da file.")}catch(e){msg("File non valido.")}};r.readAsText(f)};
+$("bReset").onclick=()=>{S={p:clone(DP),i:clone(DI),h:{}};sync();render();lastTxt=report();msg("Valori iniziali ripristinati (storico svuotato).")};
+</script></body></html>
