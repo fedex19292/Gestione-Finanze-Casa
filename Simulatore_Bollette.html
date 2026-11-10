@@ -61,9 +61,9 @@ textarea{min-height:120px;font-family:ui-monospace,monospace;font-size:12px}
 
 <div class="card noprint">
 <h2>Backup JSON</h2>
-<div class="hint">Il backup contiene tariffe, ultimi dati inseriti e storico. Copia il testo e salvalo in un file .json; per ripristinare incolla il testo o carica il file.</div>
+<div class="hint">Il backup contiene tariffe, ultimi dati inseriti e storico. Scarica il file .json scegliendo dove salvarlo; per ripristinare carica il file (o incolla il testo).</div>
 <textarea id="json" spellcheck="false"></textarea>
-<div><button id="bExp">Genera JSON</button><button class="s" id="bCopy">Copia</button><button class="s" id="bImp">Importa dal testo</button>
+<div><button id="bDown">Scarica file JSON</button><button onclick="exportAll()">Esporta tutto (3 app)</button><button class="s" onclick="importAll()">Importa tutto</button><button class="s" id="bExp">Genera JSON</button><button class="s" id="bCopy">Copia</button><button class="s" id="bImp">Importa dal testo</button>
 <label style="display:inline-block;margin-left:6px">Carica file .json<input type="file" id="file" accept=".json,application/json"></label>
 <button class="s" id="bReset">Ripristina valori iniziali</button></div>
 <div class="hint" id="msg"></div>
@@ -71,6 +71,31 @@ textarea{min-height:120px;font-family:ui-monospace,monospace;font-size:12px}
 <p class="hint">Stima indicativa: esclude importi una tantum (voltura, deposito cauzionale) e può differire dalle bollette reali per arrotondamenti, conguagli e variazioni ARERA.</p>
 </main>
 <script>
+/* Esporta/Importa TUTTO: unisce i dati di tutte e tre le app in un unico file JSON */
+const OWN_KEY='simBollette_v1',OWN_GET=()=>S,ALLKEYS={fincasa:'Finanze casa',fondospese:'Fondo spese',simBollette_v1:'Simulatore bollette'};
+async function exportAll(){
+ const out={tipo:'backup-completo',esportato:new Date().toISOString(),dati:{}},mancanti=[];
+ for(const k in ALLKEYS){let v=null;
+  if(k===OWN_KEY)v=OWN_GET();else{try{v=JSON.parse(localStorage.getItem(k))}catch(e){}}
+  if(v)out.dati[k]=v;else mancanti.push(ALLKEYS[k])}
+ const ok=await saveJson(JSON.stringify(out,null,2),'backup-completo.json');
+ if(ok&&mancanti.length)alert('Backup salvato, ma non ho trovato i dati di: '+mancanti.join(', ')+'.\nSe le app sono in cartelle/indirizzi diversi, il browser le tiene separate: apri ognuna ed esporta da lì.')}
+function importAll(){
+ const i=document.createElement('input');i.type='file';i.accept='.json,application/json';
+ i.onchange=()=>{const f=i.files[0];if(!f)return;f.text().then(t=>{try{
+  const j=JSON.parse(t);if(!j.dati)throw 0;const ks=Object.keys(j.dati).filter(k=>k in ALLKEYS);if(!ks.length)throw 0;
+  if(!confirm('Ripristinare: '+ks.map(k=>ALLKEYS[k]).join(', ')+'?\nI dati attuali di queste app verranno sostituiti.'))return;
+  ks.forEach(k=>localStorage.setItem(k,JSON.stringify(j.dati[k])));location.reload()
+ }catch(e){alert('File di backup completo non valido')}})};i.click()}
+/* Salva JSON dove vuoi: finestra "Salva con nome" (Chrome/Edge/Opera), altrimenti download classico */
+async function saveJson(text,name){
+ if(window.showSaveFilePicker){
+  try{const h=await window.showSaveFilePicker({suggestedName:name,types:[{description:'File JSON',accept:{'application/json':['.json']}}]});
+   const w=await h.createWritable();await w.write(text);await w.close();return true}
+  catch(e){if(e&&e.name==='AbortError')return false}
+ }
+ const u=URL.createObjectURL(new Blob([text],{type:'application/json'})),l=document.createElement('a');
+ l.href=u;l.download=name;document.body.appendChild(l);l.click();l.remove();setTimeout(()=>URL.revokeObjectURL(u),1000);return true}
 const DP={eAnnuo:90,ePrezzo:0.122001,eDisp:0.018468,eQF:1.92,eQP:1.976567,kw:4.5,eQE:0.01473,asos:0.031515,arim:0.001638,eAcc:0.0227,tv:9,
 gPrezzo:0.79,pcs:0.039273,pcsStd:0.03852,gQFv:13,gQFr:6.1325,gQCr:0.11347424,gQFo:-1.8025,gQCo:0.036709,gAddiz:0.022,gC:0.983527,gA1:0.044,gA2:0.175,gA3:0.17,gA4:0.186,
 wT1:0.706142,wT2:1.412283,wT3:4.236851,wS1:37,wS2:103,wFo:0.718606,wDe:0.575974,wQa:33.086875,wQf:12.683301,wQd:9.374612,wPer:0.0987,wAss:3,wGes:1};
@@ -156,6 +181,7 @@ const $=id=>document.getElementById(id);
 $("bRep").onclick=()=>{lastTxt=report()};
 $("bCopyRep").onclick=()=>{lastTxt=report();copy(lastTxt)};
 $("bPrint").onclick=()=>{lastTxt=report();try{window.print()}catch(e){msg("Stampa non disponibile qui.")}};
+$("bDown").onclick=async()=>{const t=JSON.stringify(Object.assign({versione:1,esportato:new Date().toISOString()},S),null,2);$("json").value=t;const ok=await saveJson(t,"simulatore-bollette-backup.json");msg(ok?"File JSON salvato.":"Salvataggio annullato.")};
 $("bExp").onclick=()=>{$("json").value=JSON.stringify(Object.assign({versione:1,esportato:new Date().toISOString()},S),null,2);msg("JSON generato.")};
 $("bCopy").onclick=()=>{if(!$("json").value)$("bExp").click();copy($("json").value,$("json"))};
 $("bImp").onclick=()=>{try{load(JSON.parse($("json").value));msg("Backup importato.")}catch(e){msg("JSON non valido.")}};

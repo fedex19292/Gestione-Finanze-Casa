@@ -56,6 +56,31 @@ dialog{border:1px solid var(--ln);border-radius:12px;background:var(--card);colo
 <div class="row"><button class="p" data-a="dRule">Crea regola</button><button data-a="dOne">Solo questa voce</button><button data-a="dNo">Annulla</button></div></dialog>
 </div>
 <script>
+/* Esporta/Importa TUTTO: unisce i dati di tutte e tre le app in un unico file JSON */
+const OWN_KEY='fincasa',OWN_GET=()=>S,ALLKEYS={fincasa:'Finanze casa',fondospese:'Fondo spese',simBollette_v1:'Simulatore bollette'};
+async function exportAll(){
+ const out={tipo:'backup-completo',esportato:new Date().toISOString(),dati:{}},mancanti=[];
+ for(const k in ALLKEYS){let v=null;
+  if(k===OWN_KEY)v=OWN_GET();else{try{v=JSON.parse(localStorage.getItem(k))}catch(e){}}
+  if(v)out.dati[k]=v;else mancanti.push(ALLKEYS[k])}
+ const ok=await saveJson(JSON.stringify(out,null,2),'backup-completo.json');
+ if(ok&&mancanti.length)alert('Backup salvato, ma non ho trovato i dati di: '+mancanti.join(', ')+'.\nSe le app sono in cartelle/indirizzi diversi, il browser le tiene separate: apri ognuna ed esporta da lì.')}
+function importAll(){
+ const i=document.createElement('input');i.type='file';i.accept='.json,application/json';
+ i.onchange=()=>{const f=i.files[0];if(!f)return;f.text().then(t=>{try{
+  const j=JSON.parse(t);if(!j.dati)throw 0;const ks=Object.keys(j.dati).filter(k=>k in ALLKEYS);if(!ks.length)throw 0;
+  if(!confirm('Ripristinare: '+ks.map(k=>ALLKEYS[k]).join(', ')+'?\nI dati attuali di queste app verranno sostituiti.'))return;
+  ks.forEach(k=>localStorage.setItem(k,JSON.stringify(j.dati[k])));location.reload()
+ }catch(e){alert('File di backup completo non valido')}})};i.click()}
+/* Salva JSON dove vuoi: finestra "Salva con nome" (Chrome/Edge/Opera), altrimenti download classico */
+async function saveJson(text,name){
+ if(window.showSaveFilePicker){
+  try{const h=await window.showSaveFilePicker({suggestedName:name,types:[{description:'File JSON',accept:{'application/json':['.json']}}]});
+   const w=await h.createWritable();await w.write(text);await w.close();return true}
+  catch(e){if(e&&e.name==='AbortError')return false}
+ }
+ const u=URL.createObjectURL(new Blob([text],{type:'application/json'})),l=document.createElement('a');
+ l.href=u;l.download=name;document.body.appendChild(l);l.click();l.remove();setTimeout(()=>URL.revokeObjectURL(u),1000);return true}
 const MESI=['gennaio','febbraio','marzo','aprile','maggio','giugno','luglio','agosto','settembre','ottobre','novembre','dicembre'];
 const $=s=>document.querySelector(s);
 const ML=m=>{const[y,n]=m.split('-'),s=MESI[+n-1];return s[0].toUpperCase()+s.slice(1)+' '+y};
@@ -214,7 +239,7 @@ function rCat(){
  h+='<div class="card"><h2>Regole automatiche</h2><p class="mu">Se la descrizione contiene la parola chiave (maiuscole e spazi ignorati), la voce va nella categoria. Le regole in cima hanno la precedenza; le modifiche manuali ai singoli movimenti vincono sempre.</p><div class="row"><input id="rk" placeholder="Parola chiave"><select id="rs"><option value="-">Uscita</option><option value="+">Entrata</option></select><select id="rc">'+catOpts('')+'</select><button class="p" data-a="addrule">Aggiungi regola</button></div><div class="tw"><table>'+S.rules.map((r,i)=>'<tr><td>'+esc(r.k)+'</td><td class="mu">'+(r.s=='-'?'uscita':'entrata')+'</td><td><select data-a="rulecat" data-i="'+i+'">'+catOpts(r.c)+'</select></td><td><button class="x" data-a="delrule" data-i="'+i+'">×</button></td></tr>').join('')+'</table></div></div>';
  $('#app').innerHTML=h}
 function rData(){
- $('#app').innerHTML='<div class="card"><h2>Conti caricati</h2><table>'+(Object.entries(S.accs).map(([k,v])=>'<tr><td>'+esc(v)+'<div class="mu">'+esc(k)+'</div></td><td class="mu">'+S.tx.filter(t=>t.acc==k).length+' movimenti</td><td><button class="x" data-a="delacc" data-id="'+esc(k)+'">Rimuovi</button></td></tr>').join('')||'<tr><td class="mu">Nessun conto</td></tr>')+'</table></div><div class="card"><h2>Backup</h2><p class="mu">I dati restano solo in questo browser. Esporta un backup per non perderli o per usarli su un altro dispositivo.</p><div class="row"><button class="p" data-a="exp">Esporta backup (JSON)</button><button data-a="imp">Importa backup</button><input type="file" id="ij" accept=".json" hidden><button class="x" data-a="reset">Cancella tutto</button></div></div>'}
+ $('#app').innerHTML='<div class="card"><h2>Conti caricati</h2><table>'+(Object.entries(S.accs).map(([k,v])=>'<tr><td>'+esc(v)+'<div class="mu">'+esc(k)+'</div></td><td class="mu">'+S.tx.filter(t=>t.acc==k).length+' movimenti</td><td><button class="x" data-a="delacc" data-id="'+esc(k)+'">Rimuovi</button></td></tr>').join('')||'<tr><td class="mu">Nessun conto</td></tr>')+'</table></div><div class="card"><h2>Backup</h2><p class="mu">I dati restano solo in questo browser. Esporta un backup per non perderli o per usarli su un altro dispositivo.</p><div class="row"><button class="p" data-a="exp">Esporta backup (JSON)</button><button data-a="imp">Importa backup</button><button class="p" onclick="exportAll()">Esporta tutto (3 app)</button><button onclick="importAll()">Importa tutto</button><input type="file" id="ij" accept=".json" hidden><button class="x" data-a="reset">Cancella tutto</button></div></div>'}
 /* ---------- eventi ---------- */
 document.addEventListener('click',e=>{
  const t=e.target.closest('[data-t]');if(t&&t.classList.contains('tab')){tab=t.dataset.t;render();return}
@@ -227,7 +252,7 @@ document.addEventListener('click',e=>{
  else if(a=='delrule'){S.rules.splice(+d.i,1);save();render()}
  else if(a=='delacc'){if(confirm('Rimuovere il conto e i suoi movimenti?')){delete S.accs[d.id];S.tx=S.tx.filter(t=>t.acc!=d.id);save();render()}}
  else if(a=='reset'){if(confirm('Cancellare tutti i dati, categorie e regole?')){S=DEF();save();render()}}
- else if(a=='exp'){const u=URL.createObjectURL(new Blob([JSON.stringify(S)],{type:'application/json'})),l=document.createElement('a');l.href=u;l.download='finanze-casa-backup.json';l.click()}
+ else if(a=='exp'){saveJson(JSON.stringify(S,null,2),'finanze-casa-backup.json')}
  else if(a=='imp')$('#ij').click();
  else if(a=='dOne'){S.ov[pend.id]=pend.c;save();$('#dlg').close();render()}
  else if(a=='dRule'){const k=$('#dkw').value.trim(),t=S.tx.find(x=>x.id==pend.id);if(k){S.rules.unshift({k,c:pend.c,s:t.a<0?'-':'+'});delete S.ov[pend.id]}else S.ov[pend.id]=pend.c;save();$('#dlg').close();render()}
